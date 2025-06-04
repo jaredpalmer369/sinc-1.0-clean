@@ -6,5 +6,5 @@ import { NextResponse } from 'next/server'
 export async function GET() {
   const supabase = createRouteHandlerClient({ cookies })
   await supabase.auth.signOut()
-  return NextResponse.redirect('/login', { status: 302 })
-}
+  return NextResponse.redirect(return NextResponse.redirect('https://your-vercel-url.vercel.app/login')
+
