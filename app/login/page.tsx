@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { supabase } from "@/lib/supabaseClient"
 
+console.log("🔥 Login component loaded")
+
 export default function LoginPage() {
   const router = useRouter()
   const [email, setEmail] = useState("")
