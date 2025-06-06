@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
@@ -24,6 +23,7 @@ export default function SignupPage() {
       email,
       password,
       options: {
+        emailRedirectTo: "https://v0-sinc-1-0-qy.vercel.app/dashboard",
         data: {
           full_name: fullName,
         },
