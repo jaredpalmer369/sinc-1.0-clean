@@ -16,6 +16,7 @@ export default function SignupPage() {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
+    console.log("🟢 Signup button clicked")
     setLoading(true)
     setError("")
 
@@ -31,8 +32,13 @@ export default function SignupPage() {
     })
 
     setLoading(false)
-    if (error) setError(error.message)
-    else router.push("/login?message=Check your email to confirm your account")
+
+    if (error) {
+      console.error("❌ Supabase signup error:", error)
+      setError(error.message)
+    } else {
+      router.push("/login?message=Check your email to confirm your account")
+    }
   }
 
   return (
