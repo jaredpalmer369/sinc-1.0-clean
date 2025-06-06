@@ -1,115 +1,75 @@
 "use client"
 
 import type React from "react"
-
-import { useState, useEffect } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useState } from "react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { supabase } from "@/lib/supabaseClient"
 
 export default function LoginPage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const message = searchParams.get("message")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
-  const [notification, setNotification] = useState(message || "")
-
-  useEffect(() => {
-    if (message) {
-      setNotification(message)
-    }
-  }, [message])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
+    console.log("🟢 Login button clicked")
     setLoading(true)
     setError("")
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
 
     setLoading(false)
-    if (error) setError(error.message)
-    else router.push("/dashboard")
+
+    if (error) {
+      console.error("❌ Supabase login error:", error)
+      setError(error.message)
+    } else {
+      router.push("/dashboard")
+    }
   }
 
   return (
-    <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-sm">
-        <h2 className="mt-10 text-center text-2xl font-bold leading-9 tracking-tight text-gray-900">
-          Sign in to your account
-        </h2>
-      </div>
+    <div className="flex min-h-screen flex-col items-center justify-center px-6 py-12">
+      <h1 className="text-xl font-bold text-green-600 mb-6">🧪 LOGIN PAGE RENDERED</h1>
 
-      <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
-        {notification && <div className="mb-4 p-3 bg-blue-50 text-blue-800 rounded-md text-sm">{notification}</div>}
+      <form className="w-full max-w-sm space-y-4" onSubmit={handleLogin}>
+        <input
+          type="email"
+          placeholder="Email Address"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="w-full px-3 py-2 border rounded"
+        />
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="w-full px-3 py-2 border rounded"
+        />
+        {error && <p className="text-red-600 text-sm">{error}</p>}
 
-        <form className="space-y-6" onSubmit={handleLogin}>
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium leading-6 text-gray-900">
-              Email address
-            </label>
-            <div className="mt-2">
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-black sm:text-sm sm:leading-6 px-3"
-              />
-            </div>
-          </div>
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full bg-black text-white py-2 rounded hover:bg-gray-800"
+        >
+          {loading ? "Logging in..." : "Log in"}
+        </button>
+      </form>
 
-          <div>
-            <div className="flex items-center justify-between">
-              <label htmlFor="password" className="block text-sm font-medium leading-6 text-gray-900">
-                Password
-              </label>
-              <div className="text-sm">
-                <Link href="/reset-password" className="font-semibold text-black hover:text-gray-800">
-                  Forgot password?
-                </Link>
-              </div>
-            </div>
-            <div className="mt-2">
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-black sm:text-sm sm:leading-6 px-3"
-              />
-            </div>
-          </div>
-
-          {error && <p className="text-sm text-red-600">{error}</p>}
-
-          <div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex w-full justify-center rounded-md bg-black px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-gray-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black disabled:opacity-50"
-            >
-              {loading ? "Signing in..." : "Sign in"}
-            </button>
-          </div>
-        </form>
-
-        <p className="mt-10 text-center text-sm text-gray-500">
-          Don't have an account?{" "}
-          <Link href="/signup" className="font-semibold leading-6 text-black hover:text-gray-800">
-            Sign up
-          </Link>
-        </p>
-      </div>
+      <p className="mt-6 text-sm text-gray-600">
+        Don’t have an account?{" "}
+        <Link href="/signup" className="text-black font-semibold hover:underline">
+          Sign up
+        </Link>
+      </p>
     </div>
   )
 }
