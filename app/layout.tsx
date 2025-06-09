@@ -1,24 +1,25 @@
-import "./globals.css"
-import type { Metadata } from "next"
-import { Inter } from "next/font/google"
-import ClientLayout from "@/components/ClientLayout"
+'use client'
 
-const inter = Inter({ subsets: ["latin"] })
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 
-export const metadata: Metadata = {
-  title: "Sinc",
-  description: "AI labor operating system",
-}
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const router = useRouter()
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+  useEffect(() => {
+    const url = new URL(window.location.href)
+    const code = url.searchParams.get('code')
+
+    // ✅ If user lands on homepage with auth code, redirect them to dashboard
+    if (code && window.location.pathname === '/') {
+      router.replace(`/dashboard?code=${code}`)
+    }
+  }, [])
+
   return (
     <html lang="en">
-      <body className={inter.className}>
-        <ClientLayout>{children}</ClientLayout>
+      <body className="bg-white text-gray-900 antialiased min-h-screen">
+        {children}
       </body>
     </html>
   )
