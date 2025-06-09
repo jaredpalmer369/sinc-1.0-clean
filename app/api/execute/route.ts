@@ -1,68 +1,40 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
+import { createClient } from '@supabase/supabase-js'
+import { NextResponse } from 'next/server'
 
-export async function POST(req: NextRequest) {
-  const supabase = createServerComponentClient({ cookies })
-  const { prompt, promptId } = await req.json()
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
 
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
+export async function POST(req: Request) {
+  const { promptId } = await req.json()
 
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  // Get the prompt content
+  const { data: prompt, error } = await supabase
+    .from('prompts')
+    .select('*')
+    .eq('id', promptId)
+    .single()
+
+  if (error || !prompt) {
+    return NextResponse.json({ error: 'Prompt not found' }, { status: 404 })
   }
 
-  const start = Date.now()
+  const user_id = prompt.user_id
 
-  // 🧠 Send to OpenAI
-  const res = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'gpt-4o',
-      messages: [{ role: 'user', content: prompt }],
-    }),
-  })
+  // Simulate OpenAI response for now
+  const output = `Executed result of prompt: "${prompt.title}"\n\n${prompt.content}`
 
-  const data = await res.json()
-  const latency = Date.now() - start
-
-  if (!res.ok) {
-    console.error('OpenAI Error:', data)
-    return NextResponse.json({ error: 'OpenAI call failed' }, { status: 500 })
-  }
-
-  const output = data.choices?.[0]?.message?.content || ''
-  const tokens_used = data.usage?.total_tokens || null
-
-  // 💾 Save execution to prompt_outputs
-  const { error: insertError } = await supabase.from('prompt_outputs').insert({
-    user_id: session.user.id,
+  // Save to executions table
+  const { error: execError } = await supabase.from('executions').insert({
+    user_id,
     prompt_id: promptId,
-    output_text: output,
-    tokens_used,
-    latency_ms: latency,
-    created_at: new Date().toISOString(),
+    output
   })
 
-  if (insertError) {
-    console.error('Supabase insert error:', insertError)
-    return NextResponse.json({ error: 'Failed to save output' }, { status: 500 })
+  if (execError) {
+    return NextResponse.json({ error: 'Failed to save execution' }, { status: 500 })
   }
 
-  // 🔁 Increment run_count via RPC
-  const { error: updateError } = await supabase.rpc('increment_run_count', {
-    prompt_id_input: promptId,
-  })
-
-  if (updateError) {
-    console.error('Run count update error:', updateError)
-  }
-
-  return NextResponse.json({ result: output })
+  return NextResponse.json({ output })
 }
