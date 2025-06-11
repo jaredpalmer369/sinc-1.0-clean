@@ -2,57 +2,39 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { useRouter } from 'next/navigation'
+
+type Prompt = {
+  id: string
+  title: string
+  content: string
+}
 
 export default function DashboardPage() {
-  const supabase = createClientComponentClient()
-  const router = useRouter()
-  const [prompts, setPrompts] = useState<
-    { id: string; title: string | null; created_at: string }[]
-  >([])
+  const [prompts, setPrompts] = useState<Prompt[]>([])
 
   useEffect(() => {
-    const fetchData = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
-
-      if (!session?.user?.id) {
-        router.push('/login')
-        return
-      }
-
-      const { data, error } = await supabase
-        .from('prompts')
-        .select('id, title, created_at')
-        .eq('user_id', session.user.id)
-        .order('created_at', { ascending: false })
-
-      if (!error && data) {
-        setPrompts(data)
-      }
+    const fetchPrompts = async () => {
+      const res = await fetch('/api/prompts')
+      const data = await res.json()
+      if (res.ok) setPrompts(data.prompts)
     }
 
-    fetchData()
-  }, [supabase, router])
+    fetchPrompts()
+  }, [])
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6">Your Prompts</h1>
-
+      <h1 className="text-3xl font-bold mb-6">Your Prompts</h1>
       {prompts.length === 0 ? (
-        <p className="text-gray-500">No prompts found.</p>
+        <p>No prompts yet. Create one!</p>
       ) : (
         <ul className="space-y-4">
           {prompts.map((prompt) => (
-            <li key={prompt.id} className="border p-4 rounded hover:shadow">
+            <li key={prompt.id}>
               <Link href={`/prompts/${prompt.id}`}>
-                <div className="font-semibold text-lg">
-                  {prompt.title || 'Untitled Prompt'}
-                </div>
-                <div className="text-sm text-gray-500">
-                  Created: {new Date(prompt.created_at).toLocaleString()}
+                <div className="p-4 border rounded hover:bg-gray-100 cursor-pointer">
+                  <h2 className="text-xl font-semibold">{prompt.title}</h2>
+                  <p className="text-gray-600 line-clamp-2">{prompt.content}</p>
                 </div>
               </Link>
             </li>
