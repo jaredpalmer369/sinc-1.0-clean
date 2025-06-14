@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase'
 
 export default async function DashboardPage() {
   const supabase = createClient()
