@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { createServerClient } from '@supabase/ssr';
 import { cookies, headers } from 'next/headers';
 import { Database } from '@/types/supabase';
