@@ -1,5 +1,5 @@
+import { createServerClient } from '@supabase/ssr';
 import { cookies, headers } from 'next/headers';
-import { createServerClient } from '@supabase/auth-helpers-nextjs';
 import { Database } from '@/types/supabase';
 
 export const createClient = () =>
@@ -8,6 +8,6 @@ export const createClient = () =>
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies,
-      headers,
+      headers
     }
   );
