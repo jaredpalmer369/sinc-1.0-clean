@@ -1,77 +1,50 @@
-"use client"
+'use client';
 
-import type React from "react"
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import Link from "next/link"
-import { supabase } from "@/lib/supabaseClient"
-
-console.log("🔥 Login component loaded")
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { createBrowserClient } from '@supabase/ssr';
+import type { Database } from '@/types/supabase';
 
 export default function LoginPage() {
-  const router = useRouter()
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState("")
+  const router = useRouter();
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    console.log("🟢 Login button clicked")
-    setLoading(true)
-    setError("")
+    e.preventDefault();
+    setLoading(true);
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
+    const supabase = createBrowserClient<Database>();
+    const { error } = await supabase.auth.signInWithOtp({ email });
 
-    setLoading(false)
+    setLoading(false);
 
     if (error) {
-      console.error("❌ Supabase login error:", error)
-      setError(error.message)
+      alert('Login error: ' + error.message);
     } else {
-      router.push("/dashboard")
+      alert('Check your email for the login link!');
     }
-  }
+  };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center px-6 py-12">
-      <h1 className="text-xl font-bold text-green-600 mb-6">🧪 LOGIN PAGE RENDERED</h1>
-
-      <form className="w-full max-w-sm space-y-4" onSubmit={handleLogin}>
+    <div className="p-6">
+      <h1 className="text-2xl mb-4">Sign in</h1>
+      <form onSubmit={handleLogin} className="flex flex-col gap-3">
         <input
           type="email"
-          placeholder="Email Address"
+          placeholder="you@example.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full px-3 py-2 border rounded"
+          className="p-2 border border-gray-300 rounded"
         />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full px-3 py-2 border rounded"
-        />
-        {error && <p className="text-red-600 text-sm">{error}</p>}
-
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-black text-white py-2 rounded hover:bg-gray-800"
+          className="p-2 bg-blue-600 text-white rounded"
         >
-          {loading ? "Logging in..." : "Log in"}
+          {loading ? 'Loading...' : 'Send Magic Link'}
         </button>
       </form>
-
-      <p className="mt-6 text-sm text-gray-600">
-        Don’t have an account?{" "}
-        <Link href="/signup" className="text-black font-semibold hover:underline">
-          Sign up
-        </Link>
-      </p>
     </div>
-  )
+  );
 }
