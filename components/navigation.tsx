@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
-import { supabase } from "@/lib/supabaseClient"
+import { createClient } from "@/lib/supabase/client"
 import type { Session } from "@supabase/supabase-js"
 import { Menu, X, User, LogOut, Plus, Home, LayoutDashboard } from "lucide-react"
 
@@ -13,6 +13,8 @@ export default function Navigation() {
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
+  const supabase = createClient()
 
   useEffect(() => {
     const getSession = async () => {

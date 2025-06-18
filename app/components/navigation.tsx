@@ -2,14 +2,14 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { createBrowserSupabaseClient } from '@supabase/auth-helpers-nextjs'
+import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
 export default function Navigation() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const router = useRouter()
 
-  const supabase = createBrowserSupabaseClient()
+  const supabase = createClient()
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {

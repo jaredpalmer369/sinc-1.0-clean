@@ -16,7 +16,7 @@ export default async function DashboardPage() {
   return (
     <main className="p-4">
       <h1 className="text-xl font-semibold">Welcome, {session.user.email}</h1>
-      <p className="mt-2">You’re now viewing the dashboard.</p>
+      <p className="mt-2">You're now viewing the dashboard.</p>
     </main>
   );
 }

@@ -1,6 +1,3 @@
-import { cookies } from 'next/headers'
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
-import { Database } from '@/types/supabase'
+import { createClient } from '@/lib/supabase/server'
 
-export const createRouteHandlerSupabaseClient = () =>
-  createRouteHandlerClient<Database>({ cookies })
+export const createRouteHandlerSupabaseClient = () => createClient()

@@ -1,3 +1,6 @@
+// Deprecated: Use @/lib/supabase/client or @/lib/supabase/server instead.
+// This file is kept for reference only and should not be imported.
+
 // lib/supabase.ts
 
 import { createClient } from '@supabase/supabase-js'
