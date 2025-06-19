@@ -21,27 +21,24 @@ export default function DashboardPage() {
   const [history, setHistory] = useState<PromptRun[]>([])
   const router = useRouter()
 
-  const supabase = createBrowserClient<Database>()
-
   useEffect(() => {
-    // Get user email
+    const supabase = createBrowserClient<Database>()
+
+    // Load user info
     supabase.auth.getUser().then(({ data }) => {
       setUserEmail(data?.user?.email ?? null)
     })
 
-    // Load history
-    const loadHistory = async () => {
-      const { data, error } = await supabase
-        .from('prompt_runs')
-        .select('*')
-        .order('created_at', { ascending: false })
-
-      if (!error && data) {
-        setHistory(data as PromptRun[])
-      }
-    }
-
-    loadHistory()
+    // Load prompt history
+    supabase
+      .from('prompt_runs')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .then(({ data, error }) => {
+        if (!error && data) {
+          setHistory(data as PromptRun[])
+        }
+      })
   }, [])
 
   const handleSignout = async () => {
