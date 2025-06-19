@@ -1,3 +1,5 @@
+// app/signout/route.ts
+
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
@@ -17,9 +19,9 @@ export async function GET(req: NextRequest) {
           return req.cookies.getAll()
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
+          cookiesToSet.forEach(({ name, value, options }) => {
             res.cookies.set(name, value, options)
-          )
+          })
         },
       },
     }
