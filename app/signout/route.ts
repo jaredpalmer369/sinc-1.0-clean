@@ -1,18 +1,29 @@
-import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { createServerClient } from '@supabase/ssr'
+import type { Database } from '@/types/supabase'
 
-export async function GET() {
-  try {
-    const supabase = createClient()
-    await supabase.auth.signOut()
-
-    return NextResponse.redirect(`${process.env.NEXT_PUBLIC_SITE_URL}/login`)
-  } catch (error) {
-    console.error('Signout error:', error)
-    return new NextResponse('Internal Server Error', { status: 500 })
-  }
-}
+export const dynamic = 'force-dynamic'
 
 export async function POST() {
-  return GET()
+  const res = NextResponse.redirect(`${process.env.NEXT_PUBLIC_SITE_URL}/login`, {
+    status: 302,
+  })
+
+  const supabase = createServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll: () => [],
+        setAll: (cookies) => {
+          cookies.forEach(({ name, value, options }) =>
+            res.cookies.set(name, value, options)
+          )
+        },
+      },
+    }
+  )
+
+  await supabase.auth.signOut()
+  return res
 }
