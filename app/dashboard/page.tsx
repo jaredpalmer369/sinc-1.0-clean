@@ -124,25 +124,25 @@ export default function DashboardPage() {
       {error && <p className="text-red-600 mt-4">{error}</p>}
 
       <h2 className="mt-12 text-2xl font-semibold">Prompt History</h2>
-      <ul className="mt-4 w-full max-w-xl space-y-3">
-        {history.map((item) => (
-          <li
-            key={item.id}
-            className="border rounded p-4 bg-white shadow hover:bg-gray-50"
-          >
-            <p className="font-medium">Prompt:</p>
-            <pre className="whitespace-pre-wrap">{item.prompt}</pre>
-            <p className="font-medium mt-2">Result:</p>
-            <pre className="whitespace-pre-wrap">{item.result}</pre>
-            <button
-              className="mt-3 px-3 py-1 bg-gray-200 rounded hover:bg-gray-300"
-              onClick={() => reusePrompt(item.prompt)}
-            >
-              Reuse Prompt
-            </button>
-          </li>
-        ))}
-      </ul>
+<ul className="mt-4 w-full max-w-xl space-y-3">
+  {history.map((item) => (
+    <li
+      key={item.id}
+      className="border border-blue-600 bg-yellow-100 rounded p-4"
+    >
+      <p className="font-bold">Prompt:</p>
+      <pre className="whitespace-pre-wrap">{item.prompt}</pre>
+      <p className="font-bold mt-2">Result:</p>
+      <pre className="whitespace-pre-wrap">{item.result}</pre>
+      <button
+        className="mt-3 px-3 py-1 bg-purple-600 text-white rounded hover:bg-purple-700"
+        onClick={() => reusePrompt(item.prompt)}
+      >
+        Reuse Prompt
+      </button>
+    </li>
+  ))}
+</ul>
 
       <button
         onClick={handleSignout}
