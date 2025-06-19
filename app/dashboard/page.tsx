@@ -1,7 +1,7 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
 import type { Database } from '@/types/supabase'
 
@@ -15,10 +15,9 @@ type PromptRun = {
 export default function DashboardPage() {
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [prompt, setPrompt] = useState('')
-  const [loading, setLoading] = useState(false)
   const [output, setOutput] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
   const [history, setHistory] = useState<PromptRun[]>([])
+  const [feedbacks, setFeedbacks] = useState<Record<string, { rating: string; comment: string }>>({})
   const router = useRouter()
 
   useEffect(() => {
@@ -45,112 +44,137 @@ export default function DashboardPage() {
   }
 
   const handleRunPrompt = async () => {
-    if (!prompt.trim()) {
-      setError('Please enter a prompt.')
-      return
-    }
+    const res = await fetch('/api/run-prompt', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt }),
+    })
 
-    setLoading(true)
-    setOutput(null)
-    setError(null)
+    const data = await res.json()
+    setOutput(data.result)
 
-    try {
-      const res = await fetch('/api/run-prompt', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt }),
-      })
-
-      const data = await res.json()
-      if (res.ok) {
-        setOutput(data.result)
-
-        // Push to top of list
-        setHistory((prev) => [
-          {
-            id: crypto.randomUUID(),
-            prompt,
-            result: data.result,
-            created_at: new Date().toISOString(),
-          },
-          ...prev,
-        ])
-      } else {
-        setError(data.error || 'Something went wrong')
-      }
-    } catch (err) {
-      console.error(err)
-      setError('An unexpected error occurred.')
-    } finally {
-      setLoading(false)
-    }
+    setHistory((prev) => [
+      {
+        id: crypto.randomUUID(),
+        prompt,
+        result: data.result,
+        created_at: new Date().toISOString(),
+      },
+      ...prev,
+    ])
   }
 
   const reusePrompt = (text: string) => {
     setPrompt(text)
     setOutput(null)
-    setError(null)
+  }
+
+  const handleFeedbackChange = (id: string, field: 'rating' | 'comment', value: string) => {
+    setFeedbacks((prev) => ({
+      ...prev,
+      [id]: { ...prev[id], [field]: value },
+    }))
+  }
+
+  const submitFeedback = async (runId: string) => {
+    const supabase = createBrowserClient<Database>()
+    const feedback = feedbacks[runId]
+
+    if (!feedback || !feedback.rating) return alert('Please select a thumbs up or down.')
+
+    const { error } = await supabase.from('prompt_feedback').insert({
+      prompt_run_id: runId,
+      rating: feedback.rating,
+      comment: feedback.comment,
+    })
+
+    if (!error) {
+      alert('Feedback submitted!')
+    } else {
+      alert('Error submitting feedback.')
+      console.error(error)
+    }
   }
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center p-6">
-      <h1 className="text-3xl font-bold mb-4">Welcome to your Dashboard</h1>
-      {userEmail && <p className="mb-4">Logged in as: {userEmail}</p>}
+    <div style={{ padding: '2rem' }}>
+      <h1>Dashboard</h1>
+      <p>Logged in as: {userEmail}</p>
 
       <textarea
         value={prompt}
         onChange={(e) => setPrompt(e.target.value)}
-        className="w-full max-w-xl h-32 p-3 border rounded mb-4"
-        placeholder="Enter your prompt here..."
+        placeholder="Enter your prompt"
+        style={{ width: '100%', height: '100px', marginBottom: '1rem' }}
       />
 
-      <button
-        onClick={handleRunPrompt}
-        className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
-        disabled={loading}
-      >
-        {loading ? 'Running...' : 'Run Prompt'}
-      </button>
+      <div>
+        <button onClick={handleRunPrompt}>Run Prompt</button>
+        <button onClick={handleSignout} style={{ marginLeft: '1rem' }}>
+          Sign Out
+        </button>
+      </div>
 
-      {output && (
-        <div className="mt-6 w-full max-w-xl p-4 bg-gray-100 rounded">
-          <h2 className="font-semibold mb-2">Output:</h2>
-          <pre className="whitespace-pre-wrap">{output}</pre>
-        </div>
-      )}
+      <div style={{ marginTop: '2rem' }}>
+        <h2>Output</h2>
+        <pre>{output}</pre>
+      </div>
 
-      {error && <p className="text-red-600 mt-4">{error}</p>}
+      <div style={{ marginTop: '2rem' }}>
+        <h2>Prompt History</h2>
+        {history.length === 0 ? (
+          <p>No history yet.</p>
+        ) : (
+          <ul>
+            {history.map((item) => (
+              <li key={item.id} style={{ border: '1px solid #ccc', padding: '1rem', marginBottom: '2rem' }}>
+                <strong>Prompt:</strong> {item.prompt}
+                <br />
+                <strong>Result:</strong> {item.result}
+                <br />
+                <button onClick={() => reusePrompt(item.prompt)} style={{ marginTop: '0.5rem' }}>
+                  Reuse Prompt
+                </button>
 
-      <h2 className="mt-12 text-2xl font-semibold">Prompt History</h2>
-      <ul className="mt-4 w-full max-w-xl space-y-3">
-        {history.length === 0 && (
-          <li className="text-gray-500">No prompts run yet.</li>
+                <div style={{ marginTop: '1rem' }}>
+                  <strong>Feedback:</strong>
+                  <div style={{ margin: '0.5rem 0' }}>
+                    <label>
+                      <input
+                        type="radio"
+                        name={`rating-${item.id}`}
+                        value="up"
+                        checked={feedbacks[item.id]?.rating === 'up'}
+                        onChange={(e) => handleFeedbackChange(item.id, 'rating', e.target.value)}
+                      />
+                      👍
+                    </label>
+                    <label style={{ marginLeft: '1rem' }}>
+                      <input
+                        type="radio"
+                        name={`rating-${item.id}`}
+                        value="down"
+                        checked={feedbacks[item.id]?.rating === 'down'}
+                        onChange={(e) => handleFeedbackChange(item.id, 'rating', e.target.value)}
+                      />
+                      👎
+                    </label>
+                  </div>
+                  <textarea
+                    placeholder="Optional comment..."
+                    value={feedbacks[item.id]?.comment || ''}
+                    onChange={(e) => handleFeedbackChange(item.id, 'comment', e.target.value)}
+                    style={{ width: '100%', height: '60px' }}
+                  />
+                  <button onClick={() => submitFeedback(item.id)} style={{ marginTop: '0.5rem' }}>
+                    Submit Feedback
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
         )}
-        {history.map((item) => (
-          <li
-            key={item.id}
-            className="border border-blue-400 bg-white rounded p-4 shadow-sm"
-          >
-            <p className="font-bold">Prompt:</p>
-            <pre className="whitespace-pre-wrap">{item.prompt}</pre>
-            <p className="font-bold mt-2">Result:</p>
-            <pre className="whitespace-pre-wrap">{item.result}</pre>
-            <button
-              className="mt-3 px-3 py-1 bg-blue-100 text-sm text-blue-800 rounded hover:bg-blue-200"
-              onClick={() => reusePrompt(item.prompt)}
-            >
-              Reuse Prompt
-            </button>
-          </li>
-        ))}
-      </ul>
-
-      <button
-        onClick={handleSignout}
-        className="mt-12 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition"
-      >
-        Sign Out
-      </button>
-    </main>
+      </div>
+    </div>
   )
 }
