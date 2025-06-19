@@ -5,7 +5,7 @@ import type { Database } from '@/types/supabase'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET(req: NextRequest) {
+export async function POST(req: NextRequest) {
   const res = NextResponse.redirect(`${process.env.NEXT_PUBLIC_SITE_URL}/login`)
 
   const supabase = createServerClient<Database>(
