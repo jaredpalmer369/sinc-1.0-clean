@@ -5,19 +5,43 @@ import { useEffect, useState } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import type { Database } from '@/types/supabase'
 
+type PromptRun = {
+  id: string
+  prompt: string
+  result: string
+  created_at: string
+}
+
 export default function DashboardPage() {
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [prompt, setPrompt] = useState('')
   const [loading, setLoading] = useState(false)
   const [output, setOutput] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [history, setHistory] = useState<PromptRun[]>([])
   const router = useRouter()
 
+  const supabase = createBrowserClient<Database>()
+
   useEffect(() => {
-    const supabase = createBrowserClient<Database>()
+    // Get user email
     supabase.auth.getUser().then(({ data }) => {
       setUserEmail(data?.user?.email ?? null)
     })
+
+    // Load history
+    const loadHistory = async () => {
+      const { data, error } = await supabase
+        .from('prompt_runs')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (!error && data) {
+        setHistory(data as PromptRun[])
+      }
+    }
+
+    loadHistory()
   }, [])
 
   const handleSignout = async () => {
@@ -45,6 +69,17 @@ export default function DashboardPage() {
       const data = await res.json()
       if (res.ok) {
         setOutput(data.result)
+
+        // Add to top of history
+        setHistory((prev) => [
+          {
+            id: crypto.randomUUID(),
+            prompt,
+            result: data.result,
+            created_at: new Date().toISOString(),
+          },
+          ...prev,
+        ])
       } else {
         setError(data.error || 'Something went wrong')
       }
@@ -54,6 +89,12 @@ export default function DashboardPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const reusePrompt = (text: string) => {
+    setPrompt(text)
+    setOutput(null)
+    setError(null)
   }
 
   return (
@@ -84,6 +125,27 @@ export default function DashboardPage() {
       )}
 
       {error && <p className="text-red-600 mt-4">{error}</p>}
+
+      <h2 className="mt-12 text-2xl font-semibold">Prompt History</h2>
+      <ul className="mt-4 w-full max-w-xl space-y-3">
+        {history.map((item) => (
+          <li
+            key={item.id}
+            className="border rounded p-4 bg-white shadow hover:bg-gray-50"
+          >
+            <p className="font-medium">Prompt:</p>
+            <pre className="whitespace-pre-wrap">{item.prompt}</pre>
+            <p className="font-medium mt-2">Result:</p>
+            <pre className="whitespace-pre-wrap">{item.result}</pre>
+            <button
+              className="mt-3 px-3 py-1 bg-gray-200 rounded hover:bg-gray-300"
+              onClick={() => reusePrompt(item.prompt)}
+            >
+              Reuse Prompt
+            </button>
+          </li>
+        ))}
+      </ul>
 
       <button
         onClick={handleSignout}
