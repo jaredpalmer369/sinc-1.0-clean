@@ -9,9 +9,11 @@ export default function HomePage() {
 
   useEffect(() => {
     const checkAuth = async () => {
-      // ✅ Prevent crash if env vars aren't loaded
-      if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-        console.warn('Supabase environment variables not set')
+      const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+      const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+      if (!url || !key) {
+        console.warn('Missing Supabase env vars')
         return
       }
 
@@ -32,11 +34,27 @@ export default function HomePage() {
         Your AI workforce. Real-time execution. Enterprise intelligence. Join the next generation of labor infrastructure.
       </p>
 
-      <form className="w-full max-w-sm flex gap-2 mb-6">
+      <form
+        onSubmit={async (e) => {
+          e.preventDefault()
+          const email = (e.currentTarget.elements.namedItem('email') as HTMLInputElement)?.value
+          const res = await fetch('/api/waitlist', {
+            method: 'POST',
+            body: JSON.stringify({ email }),
+            headers: { 'Content-Type': 'application/json' }
+          })
+
+          if (res.ok) alert('You’re on the waitlist!')
+          else alert('Failed. Try again.')
+        }}
+        className="w-full max-w-sm flex gap-2 mb-6"
+      >
         <input
           type="email"
+          name="email"
           placeholder="Enter your email"
           className="flex-grow px-4 py-2 rounded-lg text-black"
+          required
         />
         <button
           type="submit"
