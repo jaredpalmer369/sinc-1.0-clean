@@ -9,15 +9,19 @@ export default function HomePage() {
 
   useEffect(() => {
     const checkAuth = async () => {
-      const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-      const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-      if (!url || !key) {
+      if (!supabaseUrl || !supabaseKey) {
         console.warn('Missing Supabase env vars')
         return
       }
 
-      const supabase = createBrowserClient()
+      const supabase = createBrowserClient({
+        supabaseUrl,
+        supabaseKey,
+      })
+
       const { data } = await supabase.auth.getSession()
       if (data.session) {
         router.push('/dashboard')
@@ -41,7 +45,7 @@ export default function HomePage() {
           const res = await fetch('/api/waitlist', {
             method: 'POST',
             body: JSON.stringify({ email }),
-            headers: { 'Content-Type': 'application/json' }
+            headers: { 'Content-Type': 'application/json' },
           })
 
           if (res.ok) alert('You’re on the waitlist!')
