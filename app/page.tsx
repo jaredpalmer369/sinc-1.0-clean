@@ -9,12 +9,19 @@ export default function HomePage() {
 
   useEffect(() => {
     const checkAuth = async () => {
+      // ✅ Prevent crash if env vars aren't loaded
+      if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+        console.warn('Supabase environment variables not set')
+        return
+      }
+
       const supabase = createBrowserClient()
       const { data } = await supabase.auth.getSession()
       if (data.session) {
         router.push('/dashboard')
       }
     }
+
     checkAuth()
   }, [router])
 
