@@ -1,3 +1,30 @@
+// app/dashboard/page.tsx
+
+import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
+
+export default async function DashboardPage() {
+  const supabase = createServerSupabaseClient()
+
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
+
+  if (!session) {
+    redirect('/login')
+  }
+
+  return (
+    <main className="min-h-screen p-6 bg-black text-white">
+      <h1 className="text-2xl font-bold mb-4">Welcome to your Dashboard</h1>
+      <div className="rounded-md border border-gray-700 p-4 bg-zinc-900">
+        <p className="text-lg">
+          You are logged in as: <strong>{session.user.email}</strong>
+        </p>
+      </div>
+    </main>
+  )
+}
 'use client'
 
 import { useEffect, useState } from 'react'

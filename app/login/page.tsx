@@ -1,3 +1,75 @@
+'use client'
+
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabase/client'
+
+export default function LoginPage() {
+  const router = useRouter()
+
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    setError('')
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
+
+    setLoading(false)
+
+    if (error) {
+      setError(error.message)
+    } else {
+      router.push('/dashboard')
+    }
+  }
+
+  return (
+    <main className="min-h-screen bg-black text-white flex items-center justify-center">
+      <form
+        onSubmit={handleLogin}
+        className="bg-zinc-900 p-6 rounded-lg shadow-md w-full max-w-md"
+      >
+        <h1 className="text-2xl font-bold mb-4">Login to Sinq</h1>
+
+        <label className="block mb-2 text-sm font-medium">Email</label>
+        <input
+          type="email"
+          className="w-full px-3 py-2 mb-4 rounded bg-zinc-800 border border-zinc-700"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
+
+        <label className="block mb-2 text-sm font-medium">Password</label>
+        <input
+          type="password"
+          className="w-full px-3 py-2 mb-4 rounded bg-zinc-800 border border-zinc-700"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+        />
+
+        {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full bg-white text-black py-2 rounded hover:bg-gray-200 transition"
+        >
+          {loading ? 'Logging in...' : 'Login'}
+        </button>
+      </form>
+    </main>
+  )
+}
 'use client';
 
 import { useState } from 'react';
