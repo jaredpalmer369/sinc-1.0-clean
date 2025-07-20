@@ -1,11 +1,7 @@
 {
   "compilerOptions": {
     "target": "esnext",
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
+    "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -17,28 +13,17 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ],
-    "baseUrl": ".",
+    "baseUrl": ".",                      // ✅ Required for alias resolution
     "paths": {
-      "@/lib/*": [
-        "lib/*"
-      ],
-      "@/types/*": [
-        "types/*"
-      ]
-    }
+      "@/*": ["./*"]                     // ✅ Maps @/lib/... etc to root
+    },
+    "plugins": [{ "name": "next" }]      // ✅ Added per Next.js telemetry prompt
   },
   "include": [
+    "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    "next-env.d.ts",
-    ".next/types/**/*.ts"
+    ".next/types/**/*.ts"               // ✅ Added by Next.js
   ],
-  "exclude": [
-    "node_modules"
-  ]
+  "exclude": ["node_modules"]
 }
