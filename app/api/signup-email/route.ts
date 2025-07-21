@@ -6,17 +6,19 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
 
+// ✅ CORS Preflight Handler
 export async function OPTIONS() {
   return new NextResponse(null, {
     status: 204,
     headers: {
       'Access-Control-Allow-Origin': 'https://waitlist.sinqai.xyz',
       'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Allow-Headers': 'Content-Type, Accept',
     },
   })
 }
 
+// ✅ Main POST Logic
 export async function POST(req: NextRequest) {
   const body = await req.json()
   const { email, source = 'landing-page' } = body
