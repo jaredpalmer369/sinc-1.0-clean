@@ -1,3 +1,3 @@
-import { createClient } from '@/lib/supabase/server'
+import { createSupabaseServerClient } from '@/lib/supabase/server'
 
-export const createRouteHandlerSupabaseClient = () => createClient()
+export const createRouteHandlerSupabaseClient = () => createSupabaseServerClient()

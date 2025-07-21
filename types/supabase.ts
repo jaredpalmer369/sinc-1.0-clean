@@ -63,7 +63,53 @@ export interface Database {
           full_name?: string | null
           avatar_url?: string | null
         }
-      }
+      },
+      executions: {
+        Row: {
+          id: string;
+          prompt_id: string;
+          user_id: string;
+          output: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          prompt_id: string;
+          user_id: string;
+          output: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          prompt_id?: string;
+          user_id?: string;
+          output?: string;
+          created_at?: string;
+        };
+      },
+      prompt_runs: {
+        Row: {
+          id: string;
+          user_id: string;
+          prompt: string;
+          result: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          prompt: string;
+          result: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          prompt?: string;
+          result?: string;
+          created_at?: string;
+        };
+      },
     }
     Views: {
       [_ in never]: never

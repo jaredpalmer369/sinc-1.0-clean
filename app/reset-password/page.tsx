@@ -1,14 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 
 export default function ResetPasswordPage() {
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
   const router = useRouter();
-  const supabase = createClient();
+  const supabase = createSupabaseBrowserClient();
 
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();

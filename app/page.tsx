@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { createBrowserClient } from '@supabase/ssr';
+import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import Image from 'next/image';
 
 // Part 1: Navigation + Hero + Mic (Done)
@@ -13,16 +13,7 @@ export default function Home() {
 
   useEffect(() => {
     const checkAuth = async () => {
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-      if (!supabaseUrl || !supabaseKey) {
-        console.warn('Missing Supabase env vars');
-        return;
-      }
-
-      const supabase = createBrowserClient(supabaseUrl, supabaseKey);
-
+      const supabase = createSupabaseBrowserClient();
       const {
         data: { session },
       } = await supabase.auth.getSession();
