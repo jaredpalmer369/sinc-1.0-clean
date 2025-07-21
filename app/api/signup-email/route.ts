@@ -11,7 +11,16 @@ export async function POST(req: NextRequest) {
   const { email, source = 'landing-page' } = body
 
   if (!email || typeof email !== 'string' || !email.includes('@')) {
-    return NextResponse.json({ error: 'Invalid or missing email' }, { status: 400 })
+    return new NextResponse(
+      JSON.stringify({ error: 'Invalid or missing email' }),
+      {
+        status: 400,
+        headers: {
+          'Access-Control-Allow-Origin': 'https://waitlist.sinqai.xyz',
+          'Content-Type': 'application/json',
+        },
+      }
+    )
   }
 
   try {
@@ -21,17 +30,51 @@ export async function POST(req: NextRequest) {
 
     if (error) {
       if (error.code === '23505') {
-        return NextResponse.json({ message: 'Email already registered' }, { status: 409 })
+        return new NextResponse(
+          JSON.stringify({ message: 'Email already registered' }),
+          {
+            status: 409,
+            headers: {
+              'Access-Control-Allow-Origin': 'https://waitlist.sinqai.xyz',
+              'Content-Type': 'application/json',
+            },
+          }
+        )
       }
-      return NextResponse.json({ error: error.message }, { status: 500 })
+
+      return new NextResponse(
+        JSON.stringify({ error: error.message }),
+        {
+          status: 500,
+          headers: {
+            'Access-Control-Allow-Origin': 'https://waitlist.sinqai.xyz',
+            'Content-Type': 'application/json',
+          },
+        }
+      )
     }
 
-    return NextResponse.json(
-      { message: 'Successfully added to waitlist', data },
-      { status: 200 }
+    return new NextResponse(
+      JSON.stringify({ message: 'Successfully added to waitlist', data }),
+      {
+        status: 200,
+        headers: {
+          'Access-Control-Allow-Origin': 'https://waitlist.sinqai.xyz',
+          'Content-Type': 'application/json',
+        },
+      }
     )
   } catch (err: any) {
     console.error('Unexpected error:', err)
-    return NextResponse.json({ error: 'Unexpected server error' }, { status: 500 })
+    return new NextResponse(
+      JSON.stringify({ error: 'Unexpected server error' }),
+      {
+        status: 500,
+        headers: {
+          'Access-Control-Allow-Origin': 'https://waitlist.sinqai.xyz',
+          'Content-Type': 'application/json',
+        },
+      }
+    )
   }
 }
