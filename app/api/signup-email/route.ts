@@ -6,34 +6,30 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
 
-// ✅ CORS Preflight Handler
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': 'https://waitlist.sinqai.xyz',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Accept',
+}
+
+// ✅ Preflight handler
 export async function OPTIONS() {
   return new NextResponse(null, {
     status: 204,
-    headers: {
-      'Access-Control-Allow-Origin': 'https://waitlist.sinqai.xyz',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Accept',
-    },
+    headers: CORS_HEADERS,
   })
 }
 
-// ✅ Main POST Logic
+// ✅ POST handler
 export async function POST(req: NextRequest) {
   const body = await req.json()
-  const { email, source = 'landing-page' } = body
+  const { email, source = 'waitlist.sinqai.xyz' } = body
 
   if (!email || typeof email !== 'string' || !email.includes('@')) {
-    return new NextResponse(
-      JSON.stringify({ error: 'Invalid or missing email' }),
-      {
-        status: 400,
-        headers: {
-          'Access-Control-Allow-Origin': 'https://waitlist.sinqai.xyz',
-          'Content-Type': 'application/json',
-        },
-      }
-    )
+    return new NextResponse(JSON.stringify({ error: 'Invalid or missing email' }), {
+      status: 400,
+      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+    })
   }
 
   try {
@@ -42,27 +38,14 @@ export async function POST(req: NextRequest) {
       .insert([{ email, source }])
 
     if (error) {
-      if (error.code === '23505') {
-        return new NextResponse(
-          JSON.stringify({ message: 'Email already registered' }),
-          {
-            status: 409,
-            headers: {
-              'Access-Control-Allow-Origin': 'https://waitlist.sinqai.xyz',
-              'Content-Type': 'application/json',
-            },
-          }
-        )
-      }
-
+      const status = error.code === '23505' ? 409 : 500
       return new NextResponse(
-        JSON.stringify({ error: error.message }),
+        JSON.stringify({
+          error: error.code === '23505' ? 'Email already registered' : error.message,
+        }),
         {
-          status: 500,
-          headers: {
-            'Access-Control-Allow-Origin': 'https://waitlist.sinqai.xyz',
-            'Content-Type': 'application/json',
-          },
+          status,
+          headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
         }
       )
     }
@@ -71,23 +54,14 @@ export async function POST(req: NextRequest) {
       JSON.stringify({ message: 'Successfully added to waitlist', data }),
       {
         status: 200,
-        headers: {
-          'Access-Control-Allow-Origin': 'https://waitlist.sinqai.xyz',
-          'Content-Type': 'application/json',
-        },
+        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
       }
     )
   } catch (err: any) {
     console.error('Unexpected error:', err)
-    return new NextResponse(
-      JSON.stringify({ error: 'Unexpected server error' }),
-      {
-        status: 500,
-        headers: {
-          'Access-Control-Allow-Origin': 'https://waitlist.sinqai.xyz',
-          'Content-Type': 'application/json',
-        },
-      }
-    )
+    return new NextResponse(JSON.stringify({ error: 'Unexpected server error' }), {
+      status: 500,
+      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+    })
   }
 }
