@@ -12,7 +12,6 @@ const CORS_HEADERS = {
   'Access-Control-Allow-Headers': 'Content-Type, Accept',
 }
 
-// ✅ Preflight handler
 export async function OPTIONS() {
   return new NextResponse(null, {
     status: 204,
@@ -20,7 +19,6 @@ export async function OPTIONS() {
   })
 }
 
-// ✅ POST handler
 export async function POST(req: NextRequest) {
   const body = await req.json()
   const { email, source = 'waitlist.sinqai.xyz' } = body
