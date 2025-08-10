@@ -1,40 +1,73 @@
-'use client';
+import { cookies } from "next/headers";
+import Link from "next/link";
+import { createServerClient } from "@supabase/ssr";
+import { ShareToggle } from "@/components/ShareToggle";
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { createSupabaseBrowserClient } from '@/lib/supabase/client';
-import type { Database } from '@/types/supabase';
+export const dynamic = "force-dynamic";
 
-export default function DashboardPage() {
-  const router = useRouter();
-  const supabase = createSupabaseBrowserClient();
-  const [userEmail, setUserEmail] = useState<string | null>(null);
+export default async function DashboardPage() {
+  const cookieStore = await cookies();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value;
+        },
+      },
+    }
+  );
 
-  useEffect(() => {
-    const getUser = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+  // Get current user
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-      if (!session) {
-        router.push('/login');
-        return;
-      }
+  // Redirect to login if no user (middleware should also handle this)
+  if (!user) {
+    return (
+      <main className="max-w-3xl mx-auto p-6">
+        <h1 className="text-2xl font-semibold mb-4">Please sign in</h1>
+        <Link href="/login" className="underline">
+          Go to login
+        </Link>
+      </main>
+    );
+  }
 
-      setUserEmail(session.user.email);
-    };
-
-    getUser();
-  }, []);
+  // Get prompts for this user
+  const { data: prompts } = await supabase
+    .from("prompts")
+    .select("id,title,is_public,created_at")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false });
 
   return (
-    <main className="min-h-screen p-6 flex flex-col items-center justify-center bg-black text-white">
-      <h1 className="text-2xl mb-4">Welcome to your Dashboard</h1>
-      {userEmail ? (
-        <p className="text-lg">Logged in as: {userEmail}</p>
-      ) : (
-        <p>Loading user session...</p>
-      )}
-    </main>
-  );
-}
+    <main className="max-w-4xl mx-auto p-6 space-y-6">
+      {/* Header */}
+      <header className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold">Dashboard</h1>
+        <nav className="text-sm space-x-4">
+          <Link className="underline" href="/marketplace">
+            Marketplace
+          </Link>
+          <Link className="underline" href="/">
+            Landing
+          </Link>
+        </nav>
+      </header>
+
+      {/* Prompt list */}
+      <section>
+        <h2 className="text-lg font-medium mb-3">Your Prompts</h2>
+        <div className="space-y-2">
+          {(prompts ?? []).map((p) => (
+            <div
+              key={p.id}
+              className="border rounded p-3 flex items-center justify-between"
+            >
+              <div>
+                <div className="font-medium">{p.title || "(untitled)"}</div>
+                <div className="text-xs text-gray-500">
+                  Crea
