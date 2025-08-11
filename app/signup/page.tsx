@@ -1,52 +1,43 @@
-'use client';
-
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { createSupabaseBrowserClient } from '@/lib/supabase/client';
+"use client";
+import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/utils/supabase/client";
 
 export default function SignupPage() {
-  const [email, setEmail] = useState('');
+  const supabase = createClient();
   const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-
-    const res = await fetch('/api/signup-email', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ email }),
-    });
-
-    if (res.ok) {
-      router.push('/thanks');
-    } else {
-      alert('Submission failed, please try again.');
-    }
-  };
+    setErr(null);
+    setLoading(true);
+    const { error } = await supabase.auth.signUp({ email, password });
+    setLoading(false);
+    if (error) return setErr(error.message);
+    router.push("/dashboard");
+  }
 
   return (
-    <div className="p-6 max-w-md mx-auto">
-      <form onSubmit={handleSubmit}>
-        <label htmlFor="email" className="block mb-2 font-medium">
-          Email:
-        </label>
-        <input
-          id="email"
-          type="email"
-          className="w-full mb-4 p-2 border border-gray-300 rounded"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-        <button
-          type="submit"
-          className="w-full bg-black text-white py-2 rounded hover:bg-gray-900"
-        >
-          Join Waitlist
+    <main className="max-w-md mx-auto p-6 space-y-6">
+      <h1 className="text-2xl font-semibold">Create account</h1>
+      <form onSubmit={onSubmit} className="space-y-4">
+        <input className="w-full border rounded p-2" placeholder="Email" type="email"
+               value={email} onChange={e=>setEmail(e.target.value)} required />
+        <input className="w-full border rounded p-2" placeholder="Password" type="password"
+               value={password} onChange={e=>setPassword(e.target.value)} required />
+        {err && <p className="text-sm text-red-600">{err}</p>}
+        <button className="w-full rounded bg-black text-white py-2" disabled={loading}>
+          {loading ? "Creating..." : "Create account"}
         </button>
       </form>
-    </div>
+      <p className="text-sm">
+        Already have an account? <Link className="underline" href="/login">Sign in</Link>
+      </p>
+    </main>
   );
 }
