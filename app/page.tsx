@@ -1,38 +1,33 @@
-'use client';
-
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
-import { createSupabaseBrowserClient } from '@/lib/supabase/client';
-import Image from 'next/image';
-
-// Part 1: Navigation + Hero + Mic (Done)
-// Part 2: Floating Background Particles
+// app/page.tsx
+import Link from "next/link";
 
 export default function Home() {
-  const router = useRouter();
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      const supabase = createSupabaseBrowserClient();
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      if (session) {
-        router.push('/dashboard');
-      }
-    };
-
-    checkAuth();
-  }, [router]);
-
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[Geist]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image className="dark:invert" src="/next.svg" alt="Sinq" width={180} height={37} priority />
-        <h1 className="text-4xl font-bold tracking-tight">Welcome to Sinq!</h1>
-        <p className="text-lg text-gray-500">Start by signing in or creating an account.</p>
-      </main>
-    </div>
+    <main className="mx-auto max-w-4xl px-6 py-16 space-y-8">
+      <header className="flex items-center justify-between">
+        <h1 className="text-3xl font-semibold">Sinq</h1>
+        <nav className="flex gap-6 text-sm">
+          <Link className="underline" href="/login">Log in</Link>
+          <Link className="underline" href="/signup">Create account</Link>
+        </nav>
+      </header>
+
+      <section className="space-y-4">
+        <h2 className="text-2xl font-medium">Welcome to Sinq!</h2>
+        <p className="text-neutral-700">
+          Create, share, and iterate on prompts. Voice + marketplace coming online next.
+        </p>
+        <div className="flex gap-3">
+          <Link href="/signup" className="rounded-xl px-4 py-2 bg-black text-white">Get started</Link>
+          <Link href="/login" className="rounded-xl px-4 py-2 border">Log in</Link>
+        </div>
+      </section>
+
+      <footer className="pt-12 text-sm text-neutral-500">
+        By continuing you agree to our{" "}
+        <a className="underline" href="/legal/terms">Terms</a> and{" "}
+        <a className="underline" href="/legal/privacy">Privacy</a>.
+      </footer>
+    </main>
   );
 }
