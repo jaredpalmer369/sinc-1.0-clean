@@ -1,3 +1,4 @@
+// app/prompts/[promptId]/page.tsx
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cookies } from "next/headers";
@@ -6,58 +7,92 @@ import ShareToggle from "@/components/ShareToggle";
 
 export const dynamic = "force-dynamic";
 
+type ExecutionRow = {
+  id: string;
+  output: string | null;
+  created_at: string;
+};
+
+type PromptRow = {
+  id: string;
+  user_id: string;
+  title: string | null;
+  description: string | null;
+  content: string | null;
+  is_public: boolean | null;
+  use_count: number | null;
+  created_at: string;
+};
+
 export default async function PromptDetail({
   params,
 }: { params: { promptId: string } }) {
+  // Supabase (server) with robust cookie passthrough
   const cookieStore = await cookies();
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
-      cookies: { get: (n: string) => cookieStore.get(n)?.value },
+      cookies: {
+        getAll: () => cookieStore.getAll(),
+        setAll: () => {}, // server component: response headers are managed by Next
+      },
     }
   );
 
-  // who is logged in?
-  const { data: { user } } = await supabase.auth.getUser();
+  // Who is logged in?
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  // fetch prompt + last 10 executions
-  const [{ data: prompt }, { data: executions }] = await Promise.all([
-    supabase
-      .from("prompts")
-      .select("id,user_id,title,description,content,is_public,use_count,created_at")
-      .eq("id", params.promptId)
-      .maybeSingle(),
-    supabase
-      .from("executions")
-      .select("id,output,created_at")
-      .eq("prompt_id", params.promptId)
-      .order("created_at", { ascending: false })
-      .limit(10),
-  ]);
+  // Fetch prompt + last 10 executions in parallel
+  const [{ data: prompt, error: promptErr }, { data: executions, error: execErr }] =
+    await Promise.all([
+      supabase
+        .from("prompts")
+        .select("id,user_id,title,description,content,is_public,use_count,created_at")
+        .eq("id", params.promptId)
+        .maybeSingle<PromptRow>(),
+      supabase
+        .from("executions")
+        .select("id,output,created_at")
+        .eq("prompt_id", params.promptId)
+        .order("created_at", { ascending: false })
+        .limit(10) as unknown as Promise<{ data: ExecutionRow[] | null; error: any }>,
+    ]);
 
-  if (!prompt) notFound();
+  if (promptErr) console.error("Prompt load error:", promptErr);
+  if (execErr) console.error("Executions load error:", execErr);
+
+  if (!prompt) return notFound();
 
   const isOwner = !!user && user.id === prompt.user_id;
-  if (!isOwner && !prompt.is_public) notFound();
+  if (!isOwner && !prompt.is_public) return notFound();
 
   return (
-    <main className="max-w-4xl mx-auto p-6 space-y-6">
-      {/* breadcrumbs */}
+    <main className="mx-auto max-w-4xl p-6 space-y-6">
+      {/* Breadcrumbs */}
       <nav className="text-sm flex gap-4">
-        <Link className="underline" href="/dashboard">← Dashboard</Link>
-        <Link className="underline" href="/marketplace">Marketplace</Link>
+        <Link className="underline" href="/dashboard">
+          ← Dashboard
+        </Link>
+        <Link className="underline" href="/marketplace">
+          Marketplace
+        </Link>
         {prompt.is_public && (
-          <Link className="underline" href={`/marketplace/${prompt.id}`}>Public page</Link>
+          <Link className="underline" href={`/marketplace/${prompt.id}`}>
+            Public page
+          </Link>
         )}
       </nav>
 
-      {/* header */}
+      {/* Header */}
       <header className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold">{prompt.title || "(untitled)"}</h1>
           <p className="text-xs text-gray-500 mt-1">
-            Created {new Date(prompt.created_at).toLocaleString()} • Uses: {prompt.use_count ?? 0}
+            Created {new Date(prompt.created_at).toLocaleString()} • Uses:{" "}
+            {prompt.use_count ?? 0}
           </p>
           {prompt.description && (
             <p className="text-sm text-gray-700 mt-2">{prompt.description}</p>
@@ -67,12 +102,15 @@ export default async function PromptDetail({
         <div className="flex items-center gap-3">
           <RunPromptButton promptId={prompt.id} />
           {isOwner && (
-            <ShareToggle promptId={prompt.id} isPublic={prompt.is_public ?? false} />
+            <ShareToggle
+              promptId={prompt.id}
+              isPublic={Boolean(prompt.is_public)}
+            />
           )}
         </div>
       </header>
 
-      {/* content */}
+      {/* Content */}
       {prompt.content && (
         <section>
           <h2 className="text-base font-medium mb-2">Prompt Content</h2>
@@ -82,7 +120,7 @@ export default async function PromptDetail({
         </section>
       )}
 
-      {/* history */}
+      {/* Recent History */}
       <section>
         <h2 className="text-base font-medium mb-2">Recent Runs</h2>
         {executions && executions.length > 0 ? (
@@ -92,26 +130,29 @@ export default async function PromptDetail({
                 <div className="text-xs text-gray-500 mb-2">
                   {new Date(ex.created_at).toLocaleString()}
                 </div>
-                <pre className="text-sm whitespace-pre-wrap">{ex.output || "(no output)"}</pre>
+                <pre className="text-sm whitespace-pre-wrap">
+                  {ex.output || "(no output)"}
+                </pre>
               </li>
             ))}
           </ul>
         ) : (
-          <p className="text-sm text-gray-600">No runs yet. Click “Run Prompt”.</p>
+          <p className="text-sm text-gray-600">
+            No runs yet. Click “Run Prompt”.
+          </p>
         )}
       </section>
     </main>
   );
 }
 
-/** Client button kept inline via a tiny client component for UX */
+/** Tiny client component for Run button (refreshes on completion) */
 function RunPromptButton({ promptId }: { promptId: string }) {
-  // This inner component must be a client component:
-  // Next supports this pattern by placing the directive at the top of the function.
   "use client";
-  const [loading, setLoading] = require("react").useState(false);
+  const React = require("react");
   const { useRouter } = require("next/navigation");
   const router = useRouter();
+  const [loading, setLoading] = React.useState(false);
 
   async function run() {
     try {
@@ -121,9 +162,8 @@ function RunPromptButton({ promptId }: { promptId: string }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ promptId }),
       });
-      // Ignore body; just refresh to see new execution row
       if (!res.ok) console.error("execute failed");
-      router.refresh();
+      router.refresh(); // shows newest execution row
     } catch (e) {
       console.error(e);
     } finally {
@@ -136,7 +176,7 @@ function RunPromptButton({ promptId }: { promptId: string }) {
       onClick={run}
       disabled={loading}
       className="rounded bg-black text-white px-4 py-2 disabled:opacity-60"
-      title="Runs this prompt and shows the newest output in Recent Runs"
+      title="Run this prompt and refresh the page to show the latest output"
     >
       {loading ? "Running..." : "Run Prompt"}
     </button>

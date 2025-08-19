@@ -1,41 +1,42 @@
-import { createServerClient } from '@supabase/ssr'
-import { NextResponse, type NextRequest } from 'next/server'
+// middleware.ts
+import { createServerClient } from "@supabase/ssr";
+import { NextResponse, type NextRequest } from "next/server";
 
-export async function middleware(request: NextRequest) {
-  const res = NextResponse.next()
+const PROTECTED = ["/dashboard", "/prompts", "/marketplace"]; // allow nested
 
+export async function middleware(req: NextRequest) {
+  const url = req.nextUrl.clone();
+  const path = url.pathname;
+  const isProtected =
+    PROTECTED.some((base) => path === base || path.startsWith(`${base}/`));
+
+  if (!isProtected) return NextResponse.next();
+
+  const res = NextResponse.next();
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get: (key) => request.cookies.get(key)?.value,
-        set: (key, value, options) => {
-          res.cookies.set(key, value, options)
-        },
-        remove: (key, options) => {
-          res.cookies.set(key, '', { ...options, maxAge: -1 })
-        },
+        getAll: () => req.cookies.getAll(),
+        setAll: (cookies) => cookies.forEach(({ name, value, options }) =>
+          res.cookies.set(name, value, options)
+        ),
       },
     }
-  )
+  );
 
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
+  const { data: { user } } = await supabase.auth.getUser();
 
-  const protectedRoutes = ['/dashboard', '/prompts']
-  const isProtected = protectedRoutes.some((path) =>
-    request.nextUrl.pathname.startsWith(path)
-  )
-
-  if (isProtected && !session) {
-    return NextResponse.redirect(new URL('/login', request.url))
+  if (!user) {
+    url.pathname = "/login";
+    url.searchParams.set("redirectedFrom", path);
+    return NextResponse.redirect(url);
   }
 
-  return res
+  return res;
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/prompts/:path*'],
-}
+  matcher: ["/((?!_next|favicon.ico|public|api).*)"],
+};
