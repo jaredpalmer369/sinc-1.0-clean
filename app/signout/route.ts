@@ -1,30 +1,20 @@
-import { createServerClient } from '@supabase/ssr'
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
-import type { Database } from '@/types/supabase'
-
-export const dynamic = 'force-dynamic'
+import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
+import { createServerClient } from "@supabase/ssr";
 
 export async function POST(req: NextRequest) {
-  const res = NextResponse.redirect(`${process.env.NEXT_PUBLIC_SITE_URL}/login`)
-
-  const supabase = createServerClient<Database>(
+  const cookieStore = cookies();
+  const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll() {
-          return req.cookies.getAll()
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            res.cookies.set(name, value, options)
-          })
-        },
+        getAll: () => cookieStore.getAll(),
+        setAll: (setCookies) => setCookies.forEach((c) => cookieStore.set(c)),
       },
     }
-  )
-
-  await supabase.auth.signOut()
-  return res
+  );
+  await supabase.auth.signOut();
+  const url = new URL("/", req.url);
+  return NextResponse.redirect(url, { status: 302 });
 }
